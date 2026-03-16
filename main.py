@@ -3,6 +3,8 @@ from discord.ext import commands, tasks
 import json
 import asyncio
 from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+JST = timezone(timedelta(hours=9))
 
 import os
 
@@ -27,8 +29,7 @@ def format_time(t):
         return "記録なし"
 
     dt = parse_time(t)
-
-    return dt.strftime("%Y/%m/%d %H:%M")
+    return dt.astimezone(JST).strftime("%Y/%m/%d %H:%M")
 
 def load_data():
     try:
@@ -62,7 +63,7 @@ def parse_time(t):
 def time_since(t):
     if t is None:
         return None
-    return datetime.now() - parse_time(t)
+    return  datetime.now(JST)- parse_time(t)
 
 
 def next_feed():
@@ -79,7 +80,7 @@ class DogCareView(discord.ui.View):
     @discord.ui.button(label="ご飯をあげた", style=discord.ButtonStyle.green)
     async def feed(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        data["last_feed"] = datetime.now().isoformat()
+        data["last_feed"] = datetime.now(JST).isoformat()
         save_data(data)
 
         await interaction.response.send_message("🐶 ご飯を記録しました", ephemeral=True)
@@ -87,7 +88,7 @@ class DogCareView(discord.ui.View):
     @discord.ui.button(label="水を交換した", style=discord.ButtonStyle.blurple)
     async def water(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        data["last_water"] = datetime.now().isoformat()
+        data["last_water"] = datetime.now(JST).isoformat()
         save_data(data)
 
         await interaction.response.send_message("💧 水交換を記録しました", ephemeral=True)
@@ -95,7 +96,7 @@ class DogCareView(discord.ui.View):
     @discord.ui.button(label="散歩に行った", style=discord.ButtonStyle.gray)
     async def walk(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        data["last_walk"] = datetime.now().isoformat()
+        data["last_walk"] = datetime.now(JST).isoformat()
         save_data(data)
 
         await interaction.response.send_message("🐕 散歩を記録しました", ephemeral=True)
@@ -107,15 +108,21 @@ class DogCareView(discord.ui.View):
             msg = "まだご飯の記録がありません"
         else:
             last = parse_time(data["last_feed"])
-            since = datetime.now() - last
+            since = datetime.now(JST) - last
             next_time = last + timedelta(hours=12)
 
-            remaining = next_time - datetime.now()
+            remaining = next_time - datetime.now(JST)
+
+            hours = remaining.seconds // 3600
+            minutes = (remaining.seconds % 3600) // 60
+
+            since_hours = since.seconds // 3600
+            since_minutes = (since.seconds % 3600) // 60
 
             msg = (
-                f"🐶次のご飯\n"
-                f"次のご飯：{remaining}\n"
-                f"最後のご飯：{since}前"
+             f"🐶 次のご飯\n"
+             f"あと {hours}時間{minutes}分\n"
+             f"最後のご飯：{since_hours}時間{since_minutes}分前"
             )
 
         await interaction.response.send_message(msg, ephemeral=True)
@@ -159,7 +166,7 @@ async def check_tasks():
 
     channel = bot.get_channel(CHANNEL_ID)
 
-    now = datetime.now()
+    now = datetime.now(JST)
 
     if data["last_feed"]:
 
