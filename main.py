@@ -123,21 +123,9 @@ async def nextmeal(self, interaction: discord.Interaction, button: discord.ui.Bu
 
         next_clock = next_time.strftime("%H:%M")
 
-        since_h = since.seconds // 3600
-        since_m = (since.seconds % 3600) // 60
-
-        rem_h = remaining.seconds // 3600
-        rem_m = (remaining.seconds % 3600) // 60
-
-        next_clock = next_time.strftime("%H:%M")
-
-        label = "今日"
-        if next_time.date() > now.date():
-            label = "明日"
-
         msg = (
             f"🐶 次のご飯\n"
-            f"{label}：{next_clock} ({rem_h}時間{rem_m}分後)\n"
+            f"今日：{next_clock} ({rem_h}時間{rem_m}分後）\n"
             f"最後のご飯：{since_h}時間{since_m}分前"
         )
 
