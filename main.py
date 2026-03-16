@@ -101,35 +101,40 @@ class DogCareView(discord.ui.View):
 
         await interaction.response.send_message("🐕 散歩を記録しました", ephemeral=True)
 
-@discord.ui.button(label="次のご飯時間", style=discord.ButtonStyle.secondary)
-async def nextmeal(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-    if data["last_feed"] is None:
-        msg = "まだご飯の記録がありません"
-    else:
-        last = parse_time(data["last_feed"])
-        now = datetime.now()
+    @discord.ui.button(label="次のご飯時間", style=discord.ButtonStyle.secondary)
+    async def nextmeal(self, interaction: discord.Interaction, button: discord.ui.Button):
 
-        since = now - last
-        next_time = last + timedelta(hours=12)
-        remaining = next_time - now
+        if data["last_feed"] is None:
+            msg = "まだご飯の記録がありません"
+        else:
+            last = parse_time(data["last_feed"])
+            now = datetime.now(JST)
 
-        # 時間計算
-        since_h = since.seconds // 3600
-        since_m = (since.seconds % 3600) // 60
+            since = now - last
+            next_time = last + timedelta(hours=12)
+            remaining = next_time - now
 
-        rem_h = remaining.seconds // 3600
-        rem_m = (remaining.seconds % 3600) // 60
+            since_h = since.seconds // 3600
+            since_m = (since.seconds % 3600) // 60
 
-        next_clock = next_time.strftime("%H:%M")
+            rem_h = remaining.seconds // 3600
+            rem_m = (remaining.seconds % 3600) // 60
 
-        msg = (
-            f"🐶 次のご飯\n"
-            f"今日：{next_clock} ({rem_h}時間{rem_m}分後）\n"
-            f"最後のご飯：{since_h}時間{since_m}分前"
-        )
+            next_clock = next_time.strftime("%H:%M")
 
-    await interaction.response.send_message(msg, ephemeral=True)
+            label = "今日"
+            if next_time.date() > now.date():
+                label = "明日"
+
+            msg = (
+                f"🐶 次のご飯\n"
+                f"{label}：{next_clock} ({rem_h}時間{rem_m}分後)\n"
+                f"最後のご飯：{since_h}時間{since_m}分前"
+            )
+
+        await interaction.response.send_message(msg, ephemeral=True)
+
 
     @discord.ui.button(label="ログ", style=discord.ButtonStyle.red)
     async def log(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -146,9 +151,6 @@ async def nextmeal(self, interaction: discord.Interaction, button: discord.ui.Bu
             msg += f"最後の散歩\n{format_time(data['last_walk'])}\n"
 
         await interaction.response.send_message(msg, ephemeral=False)
-
-        channel = interaction.channel
-        await send_control_panel(channel)
 
 
 @bot.event
